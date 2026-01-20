@@ -1,9 +1,7 @@
 #include "myheader.h"
 
-const int servoPin{9};                    // set servo pin
-const int obstacleLimit{20};              // set detection limit (20 cm)
-unsigned long forwardStartTime{};         // variable to track time since movement
-const unsigned long forwardTimeout{3000}; // variable to limit movement after set time
+constexpr int OBSTACLE_LIMIT{20};              // set detection limit (20 cm)
+constexpr unsigned long FORWARD_TIMEOUT{3000}; // variable to limit movement after set time
 
 // function for setting up the arduino code, runs once, returns nothing
 void setup() {
@@ -20,7 +18,7 @@ void setup() {
   pinMode(echoPin, INPUT);
 
   // setup the servo 
-  myServo.attach(servoPin);
+  myServo.attach(SERVO_PIN);
   myServo.write(90); // center
   delay(1000);
 }
@@ -32,17 +30,18 @@ void loop() {
   int rightDist{};              // variable of integer type for distance to an object on the right side
   bool obstacleDetected{};      // variable of boolean type for object detected
   bool forwardTimeoutReached{}; // variable of boolean type for forward movement
+  static unsigned long forwardStartTime{};         // variable to track time since movement
 
   distance = getDistance();  // get distance to object
 
   // if obstacle is detected within detection limit, set true, otherwise false
-  obstacleDetected = (distance <= obstacleLimit); 
+  obstacleDetected = (distance <= OBSTACLE_LIMIT); 
 
   // if time since movement is not zero and time elapsed is more than 3 seconds, set true, otherwise false
-  forwardTimeoutReached = (forwardStartTime != 0 && millis() - forwardStartTime >= forwardTimeout); // if time since movement is not zero and time elapsed is more than 3 seconds, set true, otherwise false
+  forwardTimeoutReached = (forwardStartTime != 0 && millis() - forwardStartTime >= FORWARD_TIMEOUT); // if time since movement is not zero and time elapsed is more than 3 seconds, set true, otherwise false
 
   // Start forward motion if path is clear and not already moving
-  if (distance > obstacleLimit && forwardStartTime == 0) {
+  if (distance > OBSTACLE_LIMIT && forwardStartTime == 0) {
     moveForward();
     forwardStartTime = millis();
   }

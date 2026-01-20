@@ -5,16 +5,19 @@
 #include <Arduino.h>
 
 // set motor driver pins of integer type
-constexpr int ena = 3;
-constexpr int in1 = 4;
-constexpr int in2 = 8;
-constexpr int in3 = 6;
-constexpr int in4 = 7;
-constexpr int enb = 5;
+constexpr int ENA = 3;
+constexpr int IN1 = 4;
+constexpr int IN2 = 8;
+constexpr int IN3 = 6;
+constexpr int IN4 = 7;
+constexpr int ENB = 5;
 
 // set ultrasonic pins of integer type
 constexpr int trigPin = 10;
 constexpr int echoPin = 11;
+
+// set servo pin
+constexpr int SERVO_PIN{9};
 
 // declare the Servo object externally
 inline Servo myServo;
