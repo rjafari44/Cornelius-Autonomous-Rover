@@ -1,6 +1,5 @@
 #include "myheader.h"
 
-Servo myServo;                            // define servo object
 const int servoPin{9};                    // set servo pin
 const int obstacleLimit{20};              // set detection limit (20 cm)
 unsigned long forwardStartTime{};         // variable to track time since movement
