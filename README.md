@@ -1,6 +1,6 @@
 # Ultrasonic Rover
 
-#### This project utilizes an ultrasonic sensor, servo motor, and an Arduino Nano microcontroller to create an obstacle-avoiding rover called **Cornelius**. Included are STL files for 3D printing, an LTspice schematic for wiring visualization, images, and a parts list. The project is divided into Mechanical, Electrical, and Programming sections for clarity. Although not a direct contributor, **Kaveh Zare** played an important role in refreshing my C++ skills, which helped make this project possible. Check out his GitHub here: [github.com/kavehzare98](https://github.com/kavehzare98)
+#### This project utilizes an ultrasonic sensor, servo motor, and an Arduino Nano microcontroller to create an obstacle-avoiding rover called **Cornelius**. Included are STL files for 3D printing, an LTspice schematic for wiring visualization, images, and a parts list. The project is divided into Mechanical, Electrical, and Programming sections for clarity.
 
 --- 
 
