@@ -19,7 +19,7 @@
 
 ---
 
-### Parts List:
+## Parts List:
 
 - Arduino Nano
 - HC-SR04 ultrasonic distance sensor
@@ -39,7 +39,7 @@
 
 ---
 
-### Mechanical:
+## Mechanical:
 The chassis is custom-designed, and the wheels are inspired by a design from Prof. Wolken at Irvine Valley College. The ultrasonic sensor bracket is not included in this repository. I recommend sourcing or designing one that best fits your build. Many suitable brackets can be found online (e.g., searching "HC-SR04 bracket" on Printables).
 - **Printing:** Chassis and wheels were 3D printed with PLA.
 - **Chassis Features:**
@@ -62,7 +62,7 @@ The chassis is custom-designed, and the wheels are inspired by a design from Pro
 
 ---
 
-### Electrical:
+## Electrical:
 The rover is powered by two 18650 Li-ion batteries in series (nominal 3.7 V each, 7.4 V total).
 - **Voltage Considerations:**
   - Arduino Nano VIN: 7–14 V
@@ -82,7 +82,7 @@ The rover is powered by two 18650 Li-ion batteries in series (nominal 3.7 V each
 
 ---
 
-### Programming:
+## Programming:
 The code is functional but can be optimized to reduce load on the Nano. It uses multiple `.cpp` files with a header file.
 - **Compilation:** Arduino CLI (Linux tested)
 - **Arduino IDE:** Should also work, though you may need to include all files manually
@@ -106,7 +106,7 @@ The code is functional but can be optimized to reduce load on the Nano. It uses 
 
 ---
 
-### Usage:
+## Usage:
 
 #### 1. Find Connected Serial Port
 
