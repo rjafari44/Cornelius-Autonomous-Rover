@@ -35,10 +35,10 @@ void loop() {
   distance = getDistance();  // get distance to object
 
   // if obstacle is detected within detection limit, set true, otherwise false
-  obstacleDetected = (distance <= OBSTACLE_LIMIT); 
+  obstacleDetected = (distance <= OBSTACLE_LIMIT);
 
   // if time since movement is not zero and time elapsed is more than 3 seconds, set true, otherwise false
-  forwardTimeoutReached = (forwardStartTime != 0 && millis() - forwardStartTime >= FORWARD_TIMEOUT); // if time since movement is not zero and time elapsed is more than 3 seconds, set true, otherwise false
+  forwardTimeoutReached = (forwardStartTime != 0 && millis() - forwardStartTime >= FORWARD_TIMEOUT);
 
   // Start forward motion if path is clear and not already moving
   if (distance > OBSTACLE_LIMIT && forwardStartTime == 0) {
@@ -46,8 +46,19 @@ void loop() {
     forwardStartTime = millis();
   }
 
-  // Run obstacle avoidance if either an obstacle is detected or set time has passed
-  if (obstacleDetected || forwardTimeoutReached) {
+  // If timeout reached, re-check path and keep going if clear
+  if (forwardTimeoutReached) {
+    forwardStartTime = millis(); // reset timer
+    distance = getDistance();    // re-check distance
+    if (distance > OBSTACLE_LIMIT) {
+      moveForward();
+      return;
+    }
+    obstacleDetected = true; // path is blocked, fall through to avoidance
+  }
+
+  // Run obstacle avoidance only if an obstacle is actually detected
+  if (obstacleDetected) {
     stopMotors();
     forwardStartTime = 0; // reset timer
 
@@ -65,7 +76,7 @@ void loop() {
     if (leftDist > rightDist) {
       turnLeft();
     } else {
-        turnRight();
+      turnRight();
     }
 
     delay(400);
