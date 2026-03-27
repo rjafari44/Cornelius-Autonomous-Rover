@@ -1,4 +1,4 @@
-#include "myheader.h"
+#include "config.h"
 
 // function to calculate distance to an object, returns an integer
 int getDistance() {

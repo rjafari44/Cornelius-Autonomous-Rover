@@ -1,4 +1,4 @@
-#include "myheader.h"
+#include "config.h"
 
 /* A chart is provided on the README for how the different Movements are achieved with the TT motors */
 
