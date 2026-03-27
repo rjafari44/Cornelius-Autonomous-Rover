@@ -1,4 +1,4 @@
-#include "myheader.h"
+#include "config.h"
 
 constexpr int OBSTACLE_LIMIT{20};              // set detection limit (20 cm)
 constexpr unsigned long FORWARD_TIMEOUT{3000}; // variable to limit movement after set time
