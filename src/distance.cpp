@@ -1,4 +1,4 @@
-#include "config.h"
+#include "common.h"
 
 // function to calculate distance to an object, returns an integer
 int getDistance() {
