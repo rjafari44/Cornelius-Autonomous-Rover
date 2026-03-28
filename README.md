@@ -58,7 +58,7 @@ The chassis is custom-designed, and the wheels are inspired by a design from Pro
 
 ![Diagram](assets/rover_assmebly.png)
 
-*The Onshape assembly shows the rough placement of parts. Components are not fully constrained or mated, so this is meant as a visual reference only. Assembly file is provided.*
+*The Onshape assembly file shows the rough placement of parts. Components are not fully constrained or mated, so this is meant as a visual reference only. Assembly file is provided.*
 
 ---
 
