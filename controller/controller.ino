@@ -22,8 +22,20 @@ int lastY = CENTER;
 unsigned long lastSend = 0;
 const int SEND_INTERVAL = 30;
 
+// ================= SEND CALLBACK =================
+void OnDataSent(const wifi_tx_info_t *info, esp_now_send_status_t status) {
+
+  if (status == ESP_NOW_SEND_SUCCESS) {
+    Serial.println("SEND OK");
+  } else {
+    Serial.println("SEND FAIL");
+  }
+}
+
 void setup() {
+
   Serial.begin(115200);
+
   WiFi.mode(WIFI_STA);
 
   if (esp_now_init() != ESP_OK) {
@@ -31,12 +43,26 @@ void setup() {
     return;
   }
 
+  esp_now_register_send_cb(OnDataSent);
+
   esp_now_peer_info_t peer = {};
   memcpy(peer.peer_addr, roverAddress, 6);
   peer.channel = 0;
   peer.encrypt = false;
 
-  esp_now_add_peer(&peer);
+  if (esp_now_add_peer(&peer) != ESP_OK) {
+    Serial.println("Failed to add peer");
+    return;
+  }
+
+  // send several neutral packets at startup
+  data.x = CENTER;
+  data.y = CENTER;
+
+  for (int i = 0; i < 10; i++) {
+    esp_now_send(roverAddress, (uint8_t*)&data, sizeof(data));
+    delay(20);
+  }
 
   Serial.println("Controller ready");
 }
@@ -49,19 +75,22 @@ void loop() {
   int x = analogRead(JOY_X);
   int y = analogRead(JOY_Y);
 
-  // smoothing first
+  // smoothing
   lastX = (lastX * 3 + x) / 4;
   lastY = (lastY * 3 + y) / 4;
 
   int sx = lastX;
   int sy = lastY;
 
-  // deadzone AFTER smoothing (important fix)
+  // deadzone
   if (abs(sx - CENTER) < DEADZONE) sx = CENTER;
   if (abs(sy - CENTER) < DEADZONE) sy = CENTER;
 
   data.x = sx;
   data.y = sy;
+
+  // DEBUG
+  Serial.printf("TX -> X:%d  Y:%d\n", sx, sy);
 
   esp_now_send(roverAddress, (uint8_t*)&data, sizeof(data));
 }
