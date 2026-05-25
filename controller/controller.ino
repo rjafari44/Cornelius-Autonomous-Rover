@@ -6,7 +6,8 @@ uint8_t roverAddress[] = {0xA8, 0x46, 0x74, 0x5C, 0x1A, 0x7C};
 #define JOY_X 4
 #define JOY_Y 3
 
-#define CENTER 2048
+#define CENTER_X 3400
+#define CENTER_Y 3350
 #define DEADZONE 80
 
 typedef struct {
@@ -16,21 +17,11 @@ typedef struct {
 
 ControlData data;
 
-int lastX = CENTER;
-int lastY = CENTER;
+int lastX = CENTER_X;
+int lastY = CENTER_Y;
 
 unsigned long lastSend = 0;
 const int SEND_INTERVAL = 30;
-
-// ================= SEND CALLBACK =================
-void OnDataSent(const wifi_tx_info_t *info, esp_now_send_status_t status) {
-
-  if (status == ESP_NOW_SEND_SUCCESS) {
-    Serial.println("SEND OK");
-  } else {
-    Serial.println("SEND FAIL");
-  }
-}
 
 void setup() {
 
@@ -43,26 +34,12 @@ void setup() {
     return;
   }
 
-  esp_now_register_send_cb(OnDataSent);
-
   esp_now_peer_info_t peer = {};
   memcpy(peer.peer_addr, roverAddress, 6);
   peer.channel = 0;
   peer.encrypt = false;
 
-  if (esp_now_add_peer(&peer) != ESP_OK) {
-    Serial.println("Failed to add peer");
-    return;
-  }
-
-  // send several neutral packets at startup
-  data.x = CENTER;
-  data.y = CENTER;
-
-  for (int i = 0; i < 10; i++) {
-    esp_now_send(roverAddress, (uint8_t*)&data, sizeof(data));
-    delay(20);
-  }
+  esp_now_add_peer(&peer);
 
   Serial.println("Controller ready");
 }
@@ -82,9 +59,9 @@ void loop() {
   int sx = lastX;
   int sy = lastY;
 
-  // deadzone
-  if (abs(sx - CENTER) < DEADZONE) sx = CENTER;
-  if (abs(sy - CENTER) < DEADZONE) sy = CENTER;
+  // deadzone AFTER smoothing
+  if (abs(sx - CENTER_X) < DEADZONE) sx = CENTER_X;
+  if (abs(sy - CENTER_Y) < DEADZONE) sy = CENTER_Y;
 
   data.x = sx;
   data.y = sy;
