@@ -5,86 +5,63 @@ uint8_t roverAddress[] = {0xA8, 0x46, 0x74, 0x5C, 0x1A, 0x7C};
 
 #define JOY_X 4
 #define JOY_Y 3
-#define MODE_BUTTON 1
+
+#define CENTER 2048
+#define DEADZONE 80
 
 typedef struct {
   int x;
   int y;
-  bool autonomous;
 } ControlData;
 
-ControlData myData;
+ControlData data;
 
-bool autonomousMode = false;
-bool lastButtonState = HIGH;
+int lastX = CENTER;
+int lastY = CENTER;
+
+unsigned long lastSend = 0;
+const int SEND_INTERVAL = 30;
 
 void setup() {
   Serial.begin(115200);
-  delay(1000);
-
-  pinMode(MODE_BUTTON, INPUT_PULLUP);
-
   WiFi.mode(WIFI_STA);
-
-  Serial.print("Controller MAC Address: ");
-  Serial.println(WiFi.macAddress());
 
   if (esp_now_init() != ESP_OK) {
     Serial.println("ESP-NOW init failed");
     return;
   }
 
-  esp_now_peer_info_t peerInfo{};
-  memcpy(peerInfo.peer_addr, roverAddress, 6);
+  esp_now_peer_info_t peer = {};
+  memcpy(peer.peer_addr, roverAddress, 6);
+  peer.channel = 0;
+  peer.encrypt = false;
 
-  peerInfo.channel = 0;
-  peerInfo.encrypt = false;
+  esp_now_add_peer(&peer);
 
-  if (esp_now_add_peer(&peerInfo) != ESP_OK) {
-    Serial.println("Failed to add peer");
-    return;
-  }
-
-  Serial.println("Controller ready!");
+  Serial.println("Controller ready");
 }
 
 void loop() {
 
-  bool buttonState = digitalRead(MODE_BUTTON);
+  if (millis() - lastSend < SEND_INTERVAL) return;
+  lastSend = millis();
 
-  if (buttonState == LOW && lastButtonState == HIGH) {
-    autonomousMode = !autonomousMode;
+  int x = analogRead(JOY_X);
+  int y = analogRead(JOY_Y);
 
-    Serial.println(
-      autonomousMode ? "Autonomous Mode"
-                     : "Manual Mode"
-    );
+  // smoothing first
+  lastX = (lastX * 3 + x) / 4;
+  lastY = (lastY * 3 + y) / 4;
 
-    delay(200);
-  }
+  int sx = lastX;
+  int sy = lastY;
 
-  lastButtonState = buttonState;
+  // deadzone AFTER smoothing (important fix)
+  if (abs(sx - CENTER) < DEADZONE) sx = CENTER;
+  if (abs(sy - CENTER) < DEADZONE) sy = CENTER;
 
-  myData.x = analogRead(JOY_X);
-  myData.y = analogRead(JOY_Y);
-  myData.autonomous = autonomousMode;
+  data.x = sx;
+  data.y = sy;
 
-  esp_err_t result = esp_now_send(
-    roverAddress,
-    (uint8_t *)&myData,
-    sizeof(myData)
-  );
-
-  if (result == ESP_OK) {
-    Serial.printf(
-      "Sent: X=%d Y=%d Mode=%s\n",
-      myData.x,
-      myData.y,
-      autonomousMode ? "AUTO" : "MANUAL"
-    );
-  } else {
-    Serial.println("Send failed");
-  }
-
-  delay(50);
+  esp_now_send(roverAddress, (uint8_t*)&data, sizeof(data));
 }
