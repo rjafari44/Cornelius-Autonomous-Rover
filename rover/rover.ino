@@ -21,6 +21,13 @@ constexpr int MOTOR_SPEED = 200;
 constexpr int OBSTACLE_LIMIT = 20;
 constexpr unsigned long FAILSAFE_MS = 500;
 
+// SERVO CENTER FIX
+constexpr int SERVO_CENTER = 100;
+
+// ================= SWEEP TIMER =================
+unsigned long lastSweepTime = 0;
+constexpr unsigned long SWEEP_INTERVAL = 5000;
+
 // ================= SERVO =================
 Servo myServo;
 
@@ -72,7 +79,6 @@ int getDistance() {
   }
 
   avgDuration = (sum / count);
-
   distance = (avgDuration * 0.034 / 2 + 0.5);
 
   return distance;
@@ -81,61 +87,51 @@ int getDistance() {
 // ================= LOOK LEFT =================
 int lookLeft() {
 
-  int distance1{};
-  int distance2{};
-  int avgDistance{};
+  int d1{}, d2{}, avg{};
 
-  myServo.write(135);
-  delay(500);
+  myServo.write(SERVO_CENTER + 35); // 135
+  delay(400);
+  d1 = getDistance();
 
-  distance1 = getDistance();
+  myServo.write(SERVO_CENTER + 80); // 180
+  delay(400);
+  d2 = getDistance();
 
-  myServo.write(180);
-  delay(500);
-
-  distance2 = getDistance();
-
-  myServo.write(90);
+  myServo.write(SERVO_CENTER);
   delay(300);
 
-  avgDistance = (distance1 + distance2) / 2;
-
-  return avgDistance;
+  avg = (d1 + d2) / 2;
+  return avg;
 }
 
 // ================= LOOK RIGHT =================
 int lookRight() {
 
-  int distance1{};
-  int distance2{};
-  int avgDistance{};
+  int d1{}, d2{}, avg{};
 
-  myServo.write(45);
-  delay(500);
+  myServo.write(SERVO_CENTER - 55); // 45
+  delay(400);
+  d1 = getDistance();
 
-  distance1 = getDistance();
+  myServo.write(SERVO_CENTER - 100); // 0
+  delay(400);
+  d2 = getDistance();
 
-  myServo.write(0);
-  delay(500);
-
-  distance2 = getDistance();
-
-  myServo.write(90);
+  myServo.write(SERVO_CENTER);
   delay(300);
 
-  avgDistance = (distance1 + distance2) / 2;
-
-  return avgDistance;
+  avg = (d1 + d2) / 2;
+  return avg;
 }
 
 // ================= MOTOR FUNCTIONS =================
 void moveForward() {
 
-  digitalWrite(IN1, HIGH);
-  digitalWrite(IN2, LOW);
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, HIGH);
 
-  digitalWrite(IN3, HIGH);
-  digitalWrite(IN4, LOW);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
 
   analogWrite(ENA, MOTOR_SPEED);
   analogWrite(ENB, MOTOR_SPEED);
@@ -143,20 +139,8 @@ void moveForward() {
 
 void moveBackward() {
 
-  digitalWrite(IN1, LOW);
-  digitalWrite(IN2, HIGH);
-
-  digitalWrite(IN3, LOW);
-  digitalWrite(IN4, HIGH);
-
-  analogWrite(ENA, MOTOR_SPEED);
-  analogWrite(ENB, MOTOR_SPEED);
-}
-
-void turnLeft() {
-
-  digitalWrite(IN1, LOW);
-  digitalWrite(IN2, HIGH);
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
 
   digitalWrite(IN3, HIGH);
   digitalWrite(IN4, LOW);
@@ -165,13 +149,25 @@ void turnLeft() {
   analogWrite(ENB, MOTOR_SPEED);
 }
 
-void turnRight() {
+void turnLeft() {
 
   digitalWrite(IN1, HIGH);
   digitalWrite(IN2, LOW);
 
   digitalWrite(IN3, LOW);
   digitalWrite(IN4, HIGH);
+
+  analogWrite(ENA, MOTOR_SPEED);
+  analogWrite(ENB, MOTOR_SPEED);
+}
+
+void turnRight() {
+
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, HIGH);
+
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
 
   analogWrite(ENA, MOTOR_SPEED);
   analogWrite(ENB, MOTOR_SPEED);
@@ -191,77 +187,100 @@ void manualControl(int x, int y) {
     return;
   }
 
-  // forward/backward priority
   if (abs(y) >= abs(x)) {
 
-    if (y > 0) {
-      moveForward();
-    }
-    else {
-      moveBackward();
-    }
-  }
-  else {
+    if (y > 0) moveBackward();   // swapped
+    else moveForward();          // swapped
 
-    if (x > 0) {
-      turnRight();
-    }
-    else {
-      turnLeft();
-    }
+  } else {
+
+    if (x > 0) turnRight();
+    else turnLeft();
   }
 }
 
-// ================= AUTONOMOUS =================
+// ================= AUTONOMOUS (STABLE + SWEEP) =================
 void autonomousDrive() {
 
-  int distance{};
-  int leftDist{};
-  int rightDist{};
+  static unsigned long lastMoveTime = 0;
 
-  distance = getDistance();
+  unsigned long now = millis();
 
+  int d1 = getDistance();
+  delay(5);
+  int d2 = getDistance();
+
+  int distance = (d1 + d2) / 2;
+
+  // SAFE PATH → MOVE FORWARD
   if (distance > OBSTACLE_LIMIT) {
 
-    moveForward();
-    delay(200);
+    if (millis() - lastMoveTime > 200) {
+      moveForward();
+      lastMoveTime = millis();
+    }
+
+    // ================= 5 SECOND SWEEP =================
+    if (now - lastSweepTime >= SWEEP_INTERVAL) {
+
+      lastSweepTime = now;
+
+      stopMotors();
+      delay(80);
+
+      int leftDist = lookLeft();
+      int rightDist = lookRight();
+
+      if (leftDist > rightDist + 10) {
+        turnLeft();
+        delay(200);
+      }
+      else if (rightDist > leftDist + 10) {
+        turnRight();
+        delay(200);
+      }
+
+      stopMotors();
+    }
 
     return;
   }
 
-  // obstacle detected
+  // OBSTACLE DETECTED
   stopMotors();
-
-  delay(200);
+  delay(150);
 
   moveBackward();
   delay(300);
 
   stopMotors();
 
-  leftDist = lookLeft();
-  rightDist = lookRight();
+  int leftDist = lookLeft();
+  int rightDist = lookRight();
+
+  if (leftDist < OBSTACLE_LIMIT && rightDist < OBSTACLE_LIMIT) {
+    moveBackward();
+    delay(300);
+    return;
+  }
 
   if (leftDist > rightDist) {
     turnLeft();
-  }
-  else {
+  } else {
     turnRight();
   }
 
-  delay(400);
+  delay(350);
 
   stopMotors();
 }
 
-// ================= ESP-NOW CALLBACK =================
+// ================= ESP-NOW =================
 void OnDataRecv(const esp_now_recv_info *info,
                 const uint8_t *incomingData,
                 int len) {
 
-  if (len != sizeof(ControlData)) {
-    return;
-  }
+  if (len != sizeof(ControlData)) return;
 
   memcpy(&rx, incomingData, sizeof(rx));
 
@@ -274,7 +293,6 @@ void setup() {
 
   Serial.begin(115200);
 
-  // motor pins
   pinMode(ENA, OUTPUT);
   pinMode(ENB, OUTPUT);
 
@@ -284,29 +302,21 @@ void setup() {
   pinMode(IN3, OUTPUT);
   pinMode(IN4, OUTPUT);
 
-  // ultrasonic
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
 
-  // servo
   myServo.attach(SERVO_PIN);
-  myServo.write(90);
+  myServo.write(SERVO_CENTER);
 
-  delay(1000);
+  delay(800);
 
-  // stop motors initially
   stopMotors();
 
-  // wifi
   WiFi.mode(WIFI_STA);
-
   esp_wifi_set_channel(1, WIFI_SECOND_CHAN_NONE);
 
-  // esp-now
   if (esp_now_init() != ESP_OK) {
-
     Serial.println("ESP-NOW failed");
-
     return;
   }
 
@@ -318,14 +328,9 @@ void setup() {
 // ================= LOOP =================
 void loop() {
 
-  // failsafe
-  if (!hasPacket ||
-      millis() - lastPacketTime > FAILSAFE_MS) {
-
+  if (!hasPacket || millis() - lastPacketTime > FAILSAFE_MS) {
     stopMotors();
-
     delay(10);
-
     return;
   }
 
@@ -333,8 +338,7 @@ void loop() {
 
   if (autonomousMode) {
     autonomousDrive();
-  }
-  else {
+  } else {
     manualControl(rx.x, rx.y);
   }
 }
