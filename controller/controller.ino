@@ -3,7 +3,7 @@
 
 uint8_t roverAddress[] = {0xA8, 0x46, 0x74, 0x5C, 0x1A, 0x7C};
 
-// ================= PINS =================
+// pins
 constexpr int JOY_X{4};
 constexpr int JOY_Y{3};
 constexpr int JOY_BTN{9};    // switching modes
@@ -108,7 +108,7 @@ void loop() {
 
   if (lastBtnState == HIGH && btnState == LOW) {
     autonomous = !autonomous;
-    
+
     Serial.printf("Mode toggled -> %s\n", autonomous ? "AUTONOMOUS" : "MANUAL");
 
     digitalWrite(LED_GREEN, HIGH);
