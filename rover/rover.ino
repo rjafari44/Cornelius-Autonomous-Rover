@@ -3,49 +3,52 @@
 #include <esp_wifi.h>
 #include <ESP32Servo.h>
 
-// ================= PINS =================
-constexpr int ENA = 7;
-constexpr int IN1 = 6;
-constexpr int IN2 = 5;
-constexpr int IN3 = 4;
-constexpr int IN4 = 3;
-constexpr int ENB = 1;
+// motor driver pins
+constexpr int ENA{7};
+constexpr int IN1{6};
+constexpr int IN2{5};
+constexpr int IN3{4};
+constexpr int IN4{3};
+constexpr int ENB{1};
 
-constexpr int trigPin = 10;
-constexpr int echoPin = 8;
+// ultrasonic pins
+constexpr int TRIG_PIN{10};
+constexpr int ECHO_PIN{8};
 
-constexpr int SERVO_PIN = 0;
+// servo pin
+constexpr int SERVO_PIN{0};
 
-// ================= CONSTANTS =================
-constexpr int MOTOR_SPEED = 200;
-constexpr int OBSTACLE_LIMIT = 20;
-constexpr unsigned long FAILSAFE_MS = 500;
+// adjustable constants
+constexpr int MOTOR_SPEED{200};
+constexpr int OBSTACLE_LIMIT{20};
+constexpr unsigned long FAILSAFE_MS{500};
 
-// SERVO CENTER FIX
-constexpr int SERVO_CENTER = 100;
+// servo center angle
+constexpr int SERVO_CENTER{100};
 
-// ================= SWEEP TIMER =================
-unsigned long lastSweepTime = 0;
-constexpr unsigned long SWEEP_INTERVAL = 5000;
+// servo sweep constants
+unsigned long lastSweepTime{0};
+constexpr unsigned long SWEEP_INTERVAL{5000};
 
-// ================= SERVO =================
+// servo object
 Servo myServo;
 
-// ================= ESP-NOW =================
+// ESP-NOW data struct
 typedef struct {
   int x;
   int y;
   bool autonomous;
 } ControlData;
 
+// struct object
 ControlData rx;
 
-bool hasPacket = false;
-bool autonomousMode = false;
+// ESP-NOW & remote control variables
+bool hasPacket{false};
+bool autonomousMode{false};
+unsigned long lastPacketTime{0};
 
-unsigned long lastPacketTime = 0;
-
-// ================= DISTANCE =================
+// function for getting distance
 int getDistance() {
 
   long sum{};
@@ -56,15 +59,15 @@ int getDistance() {
 
   for (int i{}; i < 3; i++) {
 
-    digitalWrite(trigPin, LOW);
+    digitalWrite(TRIG_PIN, LOW);
     delayMicroseconds(2);
 
-    digitalWrite(trigPin, HIGH);
+    digitalWrite(TRIG_PIN, HIGH);
     delayMicroseconds(10);
 
-    digitalWrite(trigPin, LOW);
+    digitalWrite(TRIG_PIN, LOW);
 
-    duration = pulseIn(echoPin, HIGH, 25000);
+    duration = pulseIn(ECHO_PIN, HIGH, 25000);
 
     if (duration > 0) {
       sum += duration;
@@ -84,10 +87,12 @@ int getDistance() {
   return distance;
 }
 
-// ================= LOOK LEFT =================
+// function for getting left angle values
 int lookLeft() {
 
-  int d1{}, d2{}, avg{};
+  int d1{};
+  int d2{};
+  int avg{};
 
   myServo.write(SERVO_CENTER + 35); // 135
   delay(400);
@@ -104,10 +109,12 @@ int lookLeft() {
   return avg;
 }
 
-// ================= LOOK RIGHT =================
+// function for getting right angle values
 int lookRight() {
 
-  int d1{}, d2{}, avg{};
+  int d1{};
+  int d2{};
+  int avg{};
 
   myServo.write(SERVO_CENTER - 55); // 45
   delay(400);
@@ -124,7 +131,7 @@ int lookRight() {
   return avg;
 }
 
-// ================= MOTOR FUNCTIONS =================
+// function for moving forward
 void moveForward() {
 
   digitalWrite(IN1, LOW);
@@ -137,6 +144,7 @@ void moveForward() {
   analogWrite(ENB, MOTOR_SPEED);
 }
 
+// function for moving backwards
 void moveBackward() {
 
   digitalWrite(IN1, HIGH);
@@ -149,6 +157,7 @@ void moveBackward() {
   analogWrite(ENB, MOTOR_SPEED);
 }
 
+// function for turning left
 void turnLeft() {
 
   digitalWrite(IN1, HIGH);
@@ -161,6 +170,7 @@ void turnLeft() {
   analogWrite(ENB, MOTOR_SPEED);
 }
 
+// function for turning right
 void turnRight() {
 
   digitalWrite(IN1, LOW);
@@ -179,7 +189,7 @@ void stopMotors() {
   analogWrite(ENB, 0);
 }
 
-// ================= MANUAL CONTROL =================
+// function for manually controlling the rover
 void manualControl(int x, int y) {
 
   if (x == 0 && y == 0) {
@@ -189,22 +199,29 @@ void manualControl(int x, int y) {
 
   if (abs(y) >= abs(x)) {
 
-    if (y > 0) moveBackward();   // swapped
-    else moveForward();          // swapped
+    if (y > 0) {
+      moveBackward();
+    }
+    else {
+      moveForward();   
+    }       
 
   } else {
 
-    if (x > 0) turnRight();
-    else turnLeft();
+    if (x > 0) {
+      turnRight();
+    }
+    else {
+      turnLeft();
+    }
   }
 }
 
 // ================= AUTONOMOUS (STABLE + SWEEP) =================
 void autonomousDrive() {
 
-  static unsigned long lastMoveTime = 0;
-
-  unsigned long now = millis();
+  static unsigned long lastMoveTime{0};
+  unsigned long now{millis()};
 
   int d1 = getDistance();
   delay(5);
@@ -212,7 +229,7 @@ void autonomousDrive() {
 
   int distance = (d1 + d2) / 2;
 
-  // SAFE PATH → MOVE FORWARD
+  // safe path to move forward
   if (distance > OBSTACLE_LIMIT) {
 
     if (millis() - lastMoveTime > 200) {
@@ -220,7 +237,7 @@ void autonomousDrive() {
       lastMoveTime = millis();
     }
 
-    // ================= 5 SECOND SWEEP =================
+    // five second sweep
     if (now - lastSweepTime >= SWEEP_INTERVAL) {
 
       lastSweepTime = now;
@@ -246,7 +263,7 @@ void autonomousDrive() {
     return;
   }
 
-  // OBSTACLE DETECTED
+  // obstacle detected
   stopMotors();
   delay(150);
 
@@ -275,7 +292,7 @@ void autonomousDrive() {
   stopMotors();
 }
 
-// ================= ESP-NOW =================
+// ESP-NOW function for data handling
 void OnDataRecv(const esp_now_recv_info *info,
                 const uint8_t *incomingData,
                 int len) {
@@ -288,7 +305,7 @@ void OnDataRecv(const esp_now_recv_info *info,
   lastPacketTime = millis();
 }
 
-// ================= SETUP =================
+// main setup
 void setup() {
 
   Serial.begin(115200);
@@ -302,8 +319,8 @@ void setup() {
   pinMode(IN3, OUTPUT);
   pinMode(IN4, OUTPUT);
 
-  pinMode(trigPin, OUTPUT);
-  pinMode(echoPin, INPUT);
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
 
   myServo.attach(SERVO_PIN);
   myServo.write(SERVO_CENTER);
@@ -325,7 +342,7 @@ void setup() {
   Serial.println("Rover Ready");
 }
 
-// ================= LOOP =================
+// main loop
 void loop() {
 
   if (!hasPacket || millis() - lastPacketTime > FAILSAFE_MS) {
@@ -336,6 +353,7 @@ void loop() {
 
   autonomousMode = rx.autonomous;
 
+  // switch between autonomous and manual
   if (autonomousMode) {
     autonomousDrive();
   } else {

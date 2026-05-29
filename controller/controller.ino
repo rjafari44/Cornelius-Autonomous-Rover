@@ -4,19 +4,19 @@
 uint8_t roverAddress[] = {0xA8, 0x46, 0x74, 0x5C, 0x1A, 0x7C};
 
 // ================= PINS =================
-#define JOY_X       4
-#define JOY_Y       3
-#define JOY_BTN     9   // Joystick press (active LOW) — try A1 if GPIO1 unresponsive
-#define LED_GREEN   10   // Forward indicator / autonomous indicator
-#define LED_RED     8    // Backward indicator / autonomous indicator
+constexpr int JOY_X{4};
+constexpr int JOY_Y{3};
+constexpr int JOY_BTN{9};    // switching modes
+constexpr int LED_GREEN{10}; // forward indicator
+constexpr int LED_RED{8};    // backward indicator
 
-// ================= JOYSTICK CALIBRATION =================
-#define CENTER_X    3400
-#define CENTER_Y    3350
-#define DEADZONE    200  // Wider deadzone to enforce strict 4-dir snapping
+// joystick calibration since mine isn't exactly 2048
+constexpr int CENTER_X{3400};
+constexpr int CENTER_Y{3350};
+constexpr int DEADZONE{200}; // large deadzone for not sticking
 
 
-// ================= DATA =================
+// ESP-NOW data struct
 typedef struct {
   int  x;
   int  y;
@@ -25,7 +25,7 @@ typedef struct {
 
 ControlData data;
 
-// ================= STATE =================
+// joystick states
 int  lastX       = CENTER_X;
 int  lastY       = CENTER_Y;
 bool autonomous  = false;
@@ -36,25 +36,25 @@ const int SEND_INTERVAL  = 30;
 // Button state tracking
 bool lastBtnState = HIGH;
 
-// ================= HELPERS =================
-
-// Map raw joystick to a proportional -255..255 value,
-// scaling each side of center independently so both directions
-// hit the same max magnitude despite the off-center neutral point.
+/* since the joysticks are not exactly centered, there needs to be some scaling:
+- map raw joystick to a proportional -255..255 value,
+- scaling each side of center independently so both directions
+- hit the same max magnitude despite the off-center neutral point.
+*/
 int proportional(int raw, int center, int deadzone) {
   int delta = raw - center;
   if (abs(delta) < deadzone) return 0;
 
   if (delta > 0) {
-    // Map (center+deadzone)..4095  →  0..255
+    // map (center+deadzone)..4095  →  0..255
     return map(delta, deadzone, 4095 - center, 0, 255);
   } else {
-    // Map -(center-deadzone)..0  →  0..-255
+    // map -(center-deadzone)..0  →  0..-255
     return -map(-delta, deadzone, center, 0, 255);
   }
 }
 
-// ================= LED CONTROL =================
+// LED control function
 void updateLEDs(int mappedX, int mappedY) {
   if (autonomous) {
     digitalWrite(LED_GREEN, HIGH);
@@ -74,15 +74,15 @@ void updateLEDs(int mappedX, int mappedY) {
   }
 }
 
-// ================= SETUP =================
+// main setup
 void setup() {
   Serial.begin(115200);
 
-  pinMode(JOY_BTN,   INPUT_PULLUP);
+  pinMode(JOY_BTN, INPUT_PULLUP);
   pinMode(LED_GREEN, OUTPUT);
-  pinMode(LED_RED,   OUTPUT);
+  pinMode(LED_RED, OUTPUT);
   digitalWrite(LED_GREEN, LOW);
-  digitalWrite(LED_RED,   LOW);
+  digitalWrite(LED_RED, LOW);
 
   WiFi.mode(WIFI_STA);
 
@@ -93,22 +93,24 @@ void setup() {
 
   esp_now_peer_info_t peer = {};
   memcpy(peer.peer_addr, roverAddress, 6);
-  peer.channel = 1;   // explicit channel — must match rover
+  peer.channel = 1;   // explicit channel which must match rover
   peer.encrypt = false;
   esp_now_add_peer(&peer);
 
   Serial.println("Controller ready — hold joystick button 3s to toggle auto/manual");
 }
 
-// ================= LOOP =================
+// main loop
 void loop() {
 
-  // ---- Button press detection (falling edge, runs every iteration) ----
+  // button press detection (falling edge, runs every iteration)
   bool btnState = digitalRead(JOY_BTN);
 
   if (lastBtnState == HIGH && btnState == LOW) {
     autonomous = !autonomous;
+    
     Serial.printf("Mode toggled -> %s\n", autonomous ? "AUTONOMOUS" : "MANUAL");
+
     digitalWrite(LED_GREEN, HIGH);
     digitalWrite(LED_RED,   HIGH);
     delay(100);
