@@ -23,23 +23,26 @@
 ## Parts List:
 
 **Rover:**
-- ESP32 microcontroller
+- WeAct Studio ESP32-C3Fx4 Mini Core
 - HC-SR04 ultrasonic distance sensor
 - 2× TT DC gear motors
 - 2× TT motor wheels
-- Two port screw terminal
+- Two port screw terminals
 - L298N motor driver
-- Micro servo (MG90 used; SG90 recommended)
+- Micro servo (sg90)
 - 2× 18650 Li-ion batteries (with holder)
-- 470 µF 16 V electrolytic capacitor
-- Dupont jumper wires
+- 3x 100 uF electrolytic capacitor
+- 3x 0.1 uF ceramic capacitor
+- 1x 10 uF ceramic capacitor
+- LM2596 adjustable buck converter set to 5V
+- dupont jumper wires
 - 3D-printed chassis, wheels, and wheel mounts (PLA)
 - Zipties
-- Screws, washers, nails (for wheel mounting)
+- bolts, washers, bearings (for wheel mounting)
 - Electrical tape (for servo fitment)
 
 **Controller:**
-- ESP32 microcontroller
+- WeAct Studio ESP32-C3Fx4 Mini Core
 - Analog joystick module
 - Push button (mode toggle)
 - Green and red LEDs
@@ -55,11 +58,11 @@ The chassis is custom-designed, and the wheels are inspired by a design from Pro
 - **Chassis Features:**
   - Holes for zipties to secure motors and components
   - Holes for routing TT motor wires to the motor driver
-  - Bracket for the servo motor (slightly loose — use tape or a small shim for tightness)
+  - Bracket for the servo motor
 - **Wheels & Mounts:**
   - Front wheels mounted to motors with zipties
-  - Rear wheel mounts printed separately and attached via screws through the chassis
-  - Rear wheels attached via two nails through the mount bracket
+  - Rear wheel mounts printed separately and attached via bolts through the chassis
+  - Rear wheels attached via bolts through the mount bracket and two bearings for each
 - **Component Mounting:** Motor driver and battery holder secured with tabs on the chassis
 - **Ultrasonic Sensor:** Custom bracket (found online) reinforced with screws and washers for stability
 - **Servo Motor:** MG90 (metal gears, overkill for this project — an SG90 or similar plastic gear servo works fine)
@@ -78,12 +81,12 @@ The rover is powered by two 18650 Li-ion batteries in series (nominal 3.7 V each
 
 **Rover:**
 - **Voltage Considerations:**
-  - ESP32 VIN: 5–12 V (via onboard regulator)
-  - MG90 servo: up to 12 V
+  - ESP32 VIN: 5V from buck converter
+  - SG90 servo: 5V from buck converter
   - Actual battery voltage ~8 V, sufficient for this setup
 - **Motors:** TT motors (3–6 V), voltage drop across the motor driver brings them into the safe range
 - **Logic Power:** L298N motor driver has a built-in 5 V regulator which powers the ESP32, HC-SR04, and servo
-- **Capacitor:** 470 µF across the power rail and GND smooths voltage spikes
+- **Capacitors:** Placing them across the power rail and GND smooths voltage spikes, refer to the schematic for locations
 - **Wiring:** Dupont jumper wires were used. Ensure solid connections to avoid intermittent failures
 - **Current Draw:** Total current should realistically not exceed 2 A
 
