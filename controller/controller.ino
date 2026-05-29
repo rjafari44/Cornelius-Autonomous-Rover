@@ -1,78 +1,20 @@
-#include <esp_now.h>
-#include <WiFi.h>
+#include "common.h"
 
+// rover MAC address
 uint8_t roverAddress[] = {0xA8, 0x46, 0x74, 0x5C, 0x1A, 0x7C};
 
-// pins
-constexpr int JOY_X{4};
-constexpr int JOY_Y{3};
-constexpr int JOY_BTN{9};    // switching modes
-constexpr int LED_GREEN{10}; // forward indicator
-constexpr int LED_RED{8};    // backward indicator
-
-// joystick calibration since mine isn't exactly 2048
-constexpr int CENTER_X{3400};
-constexpr int CENTER_Y{3350};
-constexpr int DEADZONE{200}; // large deadzone for not sticking
-
-
-// ESP-NOW data struct
-typedef struct {
-  int  x;
-  int  y;
-  bool autonomous;  // true = autonomous, false = manual
-} ControlData;
-
+// struct object
 ControlData data;
 
 // joystick states
-int  lastX       = CENTER_X;
-int  lastY       = CENTER_Y;
-bool autonomous  = false;
+int  lastX      = CENTER_X;
+int  lastY      = CENTER_Y;
+bool autonomous = false;
 
-unsigned long lastSend   = 0;
-const int SEND_INTERVAL  = 30;
+unsigned long lastSend  = 0;
 
-// Button state tracking
+// button state tracking
 bool lastBtnState = HIGH;
-
-/* since the joysticks are not exactly centered, there needs to be some scaling:
-- map raw joystick to a proportional -255..255 value,
-- scaling each side of center independently so both directions
-- hit the same max magnitude despite the off-center neutral point.
-*/
-int proportional(int raw, int center, int deadzone) {
-  int delta = raw - center;
-  if (abs(delta) < deadzone) return 0;
-
-  if (delta > 0) {
-    // map (center+deadzone)..4095  →  0..255
-    return map(delta, deadzone, 4095 - center, 0, 255);
-  } else {
-    // map -(center-deadzone)..0  →  0..-255
-    return -map(-delta, deadzone, center, 0, 255);
-  }
-}
-
-// LED control function
-void updateLEDs(int mappedX, int mappedY) {
-  if (autonomous) {
-    digitalWrite(LED_GREEN, HIGH);
-    digitalWrite(LED_RED,   HIGH);
-    return;
-  }
-
-  if (mappedY > 0) {
-    digitalWrite(LED_GREEN, LOW);
-    digitalWrite(LED_RED,   HIGH);
-  } else if (mappedY < 0) {
-    digitalWrite(LED_GREEN, HIGH);
-    digitalWrite(LED_RED,   LOW);
-  } else {
-    digitalWrite(LED_GREEN, LOW);
-    digitalWrite(LED_RED,   LOW);
-  }
-}
 
 // main setup
 void setup() {
@@ -119,7 +61,7 @@ void loop() {
   }
   lastBtnState = btnState;
 
-  // ---- Throttle send rate (no early return — button must always run) ----
+  // throttle send rate (no early return — button must always run)
   if (millis() - lastSend >= SEND_INTERVAL) {
     lastSend = millis();
 
