@@ -4,7 +4,7 @@
 read -p "Enter your ESP32 Port (e.g., /dev/ttyACM0): " PORT
 
 # Compile the code with USB CDC enabled which is necessary for the ESP32-c3
-arduino-cli compile --fqbn esp32:esp32:esp32c3:CDCOnBoot=cdc .
+arduino-cli compile --fqbn esp32:esp32:esp32c3:CDCOnBoot=cdc --build-property "compiler.cpp.extra_flags=-Iinclude" .
 
 # Upload the code to the board
 arduino-cli upload -p $PORT --fqbn esp32:esp32:esp32c3
