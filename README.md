@@ -16,7 +16,7 @@
 ---
 
 ### Image of Rover:
-![Rover](assets/rover.jpg)
+![Rover](assets/rover-new.jpg)
 
 ---
 
