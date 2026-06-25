@@ -1,6 +1,6 @@
 # Cornelius Autonomous Rover
 
-#### This project uses an ESP32 microcontroller, ultrasonic sensor, servo motor, and a custom wireless controller to create an obstacle-avoiding and manually-driven rover called **Cornelius**. The rover communicates with the controller over ESP-NOW and supports both autonomous obstacle avoidance and real-time manual control. Included are STL files for 3D printing, a circuit schematic, images, and a parts list. The project is divided into Mechanical, Electrical, and Programming sections for clarity. 
+#### This project uses an ESP32 microcontroller, ultrasonic sensor, servo motor, and a custom wireless controller to create an obstacle-avoiding and manually-driven rover called **Cornelius**. The rover communicates with the controller over ESP-NOW and supports both autonomous obstacle avoidance and real-time manual control. Included are STL files for 3D printing, a circuit schematic, images, and a parts list. The project is divided into Mechanical, Electrical, and Programming sections for clarity.
 
 ---
 
